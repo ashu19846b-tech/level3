@@ -298,6 +298,7 @@ impl MediChainContract {
 #[cfg(test)]
 mod test {
     use super::*;
+    use soroban_sdk::testutils::Address as _;
 
     #[test]
     fn test_register_patient() {
@@ -306,7 +307,7 @@ mod test {
         let patient = Address::generate(&env);
 
         MediChainContract::initialize(env.clone(), admin);
-        MediChainContract::register_patient(env.clone(), patient.clone, String::from_slice(&env, "John Doe"));
+        MediChainContract::register_patient(env.clone(), patient.clone, String::from_str(&env, "John Doe"));
 
         let patient_key = DataKey::Patient(patient);
         assert!(env.storage().persistent().has(&patient_key));
@@ -322,8 +323,8 @@ mod test {
         MediChainContract::register_doctor(
             env.clone(),
             doctor.clone,
-            String::from_slice(&env, "Dr. Smith"),
-            String::from_slice(&env, "Cardiology"),
+            String::from_str(&env, "Dr. Smith"),
+            String::from_str(&env, "Cardiology"),
             1000
         );
 
@@ -339,16 +340,16 @@ mod test {
         let token_addr = Address::generate(&env);
 
         MediChainContract::initialize(env.clone(), admin);
-        
+
         // Mock token transfer by testing the function signature
         // This test verifies the token transfer logic is callable
         let patient = Address::generate(&env);
-        MediChainContract::register_patient(env.clone(), patient.clone, String::from_slice(&env, "Jane Doe"));
-        
+        MediChainContract::register_patient(env.clone(), patient.clone, String::from_str(&env, "Jane Doe"));
+
         // Test that add_record_with_reward can be called with token parameters
-        let record_cid = String::from_slice(&env, "QmTest123");
-        let title = String::from_slice(&env, "Test Record");
-        
+        let record_cid = String::from_str(&env, "QmTest123");
+        let title = String::from_str(&env, "Test Record");
+
         // This would normally call the token contract, but for testing we just verify the function exists
         assert!(true);
     }
