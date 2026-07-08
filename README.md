@@ -35,7 +35,7 @@ In mobile-friendly
 
 
 ## ✅ CI/CD Pipeline Status
-[![CI Pipeline](https://github.com/payalbabar/stellar-green/actions/workflows/ci.yml/badge.svg)](https://github.com/payalbabar/stellar-green/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/ashu19846b-tech/level3/actions/workflows/ci.yml/badge.svg)](https://github.com/ashu19846b-tech/level3/actions/workflows/ci.yml)
 
 ## 📱 Mobile Responsive View
 *The application is built with a mobile-first approach, ensuring a seamless experience across all devices.*
@@ -142,8 +142,8 @@ Check the live contract on the Stellar Development Foundation Testnet Explorer:
 ## 📦 How to run locally
 1. Clone the repository:
    ```bash
-   git clone https://github.com/payalbabar/stellar-green.git
-   cd stellar-green
+   git clone https://github.com/ashu19846b-tech/level3.git
+   cd level3
    ```
 
 2. Install dependencies:
