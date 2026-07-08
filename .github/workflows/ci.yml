@@ -19,6 +19,15 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Install wasm32 target
+      run: rustup target add wasm32-unknown-unknown
+
     - name: Install dependencies
       run: npm install
 
@@ -32,10 +41,4 @@ jobs:
 
     - name: Run Contract Tests
       working-directory: ./rust-contracts/medichain
-      run: |
-        if command -v cargo &> /dev/null; then
-          cargo test
-        else
-          echo "Cargo not installed, skipping Rust tests"
-        fi
-      continue-on-error: true
+      run: cargo test
