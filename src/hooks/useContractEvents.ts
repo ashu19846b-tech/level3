@@ -3,11 +3,11 @@ import { useEffect, useRef } from 'react';
 export interface ContractEvent {
   type: 'RECORD_UPLOADED' | 'ACCESS_GRANTED' | 'ACCESS_REVOKED' | 'APPOINTMENT_BOOKED' | 'APPOINTMENT_COMPLETED' | 'REWARD_EARNED';
   timestamp: number;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export function useContractEvents(callback: (event: ContractEvent) => void) {
-  const listenerRef = useRef<any>(null);
+  const listenerRef = useRef<((e: StorageEvent) => void) | null>(null);
 
   useEffect(() => {
     // Listen for contract events from localStorage (mock implementation for dev)
