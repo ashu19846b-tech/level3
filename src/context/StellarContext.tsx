@@ -25,7 +25,7 @@ export function StellarProvider({ children }: { children: React.ReactNode }) {
   const fetchBalance = async (addr: string) => {
     try {
       const account = await server.loadAccount(addr);
-      const xlmBalance = account.balances.find((b: any) => b.asset_type === "native");
+      const xlmBalance = account.balances.find((b: { asset_type: string }) => b.asset_type === "native");
       if (xlmBalance) {
         setBalance(Number(xlmBalance.balance).toFixed(2));
       }
@@ -70,9 +70,10 @@ export function StellarProvider({ children }: { children: React.ReactNode }) {
         setAddress(accessObj.address);
         await fetchBalance(accessObj.address);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Freighter connection failed", error);
-      alert("Failed to connect: " + (error.message || error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert("Failed to connect: " + errorMessage);
     } finally {
       setIsConnecting(false);
     }

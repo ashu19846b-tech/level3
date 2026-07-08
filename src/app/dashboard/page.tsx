@@ -34,7 +34,7 @@ type LogEntry = {
 };
 
 export default function Dashboard() {
-  const { address, isConnected, disconnect } = useStellar();
+  const { address, disconnect } = useStellar();
   const router = useRouter();
 
   // Redirect if not connected
@@ -153,9 +153,10 @@ export default function Dashboard() {
 
       setUploadForm({ name: "", type: "Lab Report", date: "", doctor: "", notes: "", file: null });
       setActiveTab("records");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      addActivity(`Failed to upload: <strong>${error.message || "Unknown error"}</strong>`, "rust");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      addActivity(`Failed to upload: <strong>${errorMessage}</strong>`, "rust");
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
@@ -603,8 +604,9 @@ function WalletPanel() {
       const res = await sendXLM(destination, amount);
       setTxResult("Transaction Successful!");
       setTxHash(res.hash);
-    } catch (e: any) {
-      setTxResult("Transaction Failed: " + (e.message || "Unknown error"));
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Unknown error";
+      setTxResult("Transaction Failed: " + errorMessage);
     } finally {
       setLoading(false);
     }

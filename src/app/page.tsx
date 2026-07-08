@@ -228,7 +228,7 @@ export default function Home() {
         </h2>
         <div>
           <p className="text-cream/60 text-lg leading-[1.8] font-light mb-10">
-            Join thousands of patients who've reclaimed control of their health data. No subscriptions. No corporations. Just you and your records, secured by cryptography.
+            Join thousands of patients who&apos;ve reclaimed control of their health data. No subscriptions. No corporations. Just you and your records, secured by cryptography.
           </p>
           <button 
             onClick={connect}
