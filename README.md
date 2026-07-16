@@ -48,10 +48,13 @@ In mobile-friendly
 - Rust Soroban contract tests
 - Automated on push to main/develop branches
 
-### Passing Smart Contract Tests
-The smart contracts have been migrated to Rust for the Stellar/Soroban ecosystem. 
+### 🧪 Test Suite Status
 
-**Contract Tests:**
+The project includes robust unit testing suites for both the Rust Soroban smart contracts and the Next.js frontend components.
+
+#### 1. Smart Contract Tests
+The smart contracts use Soroban SDK test environment features (mocking authorization and contract state) to verify correct behaviour.
+
 ```text
 running 3 tests
 test test::test_register_doctor ... ok
@@ -61,10 +64,21 @@ test test::test_token_transfer ... ok
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
-Run tests locally:
-```bash
-cd rust-contracts/medichain
-cargo test
+#### 2. Frontend Unit Tests
+We implement lightweight frontend unit testing using the Node.js native test runner (`node:test`) and the type stripper to assert the correctness of wallet formatting and balance helpers with zero bundle bloat.
+
+```text
+TAP version 13
+# Subtest: shortenAddress utility
+ok 1 - shortenAddress utility
+# Subtest: formatBalance utility
+ok 2 - formatBalance utility
+# Subtest: formatDate utility
+ok 3 - formatDate utility
+1..3
+# tests 3
+# pass 3
+# fail 0
 ```
 
 ## 🏗️ Smart Contracts Overview
@@ -106,21 +120,22 @@ This demonstrates real inter-contract communication on Soroban.
 (Deployed on Soroban Testnet)
 
 ```text
-MediChain Main Contract:  CBG5DNSZQQJITR7OH5ELPDXLUG3EEX7W3FWNCFOZANQSXMQDUR2LGW5N
-MediReward Token (MRT):    CAS3J7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6Y7J6
+MediChain Main Contract:  CAZY3EOFD4KS6FGSDOCVCZC44QQBVKADAU6OJFENJRFARMVIDWWEWVJI
+MediReward Token (MRT):    CD2S6Z6QMFQMWS74UQK2XIHNECRBPPDZS2NOHJQ5LS7C6DYGRPE7LANV
 ```
 
 ## 🔐 Transaction Hashes
 (Verified on Soroban Explorer)
 
 ```text
-Token Deployment:        9a56e...8f21b
-Inter-Contract Call:     027768b7685b70a8239452b439534b0bca90b5580c432ea415fd731e65ff2010
+Main Contract Deployment: (Updated in fresh deploy, hash pending)
+Token Contract Deployment: 95d4477a773570615472a06816b9cec75424ff735a0905743d4c564cca8a3701
+Contract Interaction:    (Updated in fresh deploy)
 ```
 
 ### 🔍 View on Explorer
 Check the live contract on the Stellar Development Foundation Testnet Explorer:
-[Stellar Laboratory - CBG5DN...LGW5N](https://lab.stellar.org/r/testnet/contract/CBG5DNSZQQJITR7OH5ELPDXLUG3EEX7W3FWNCFOZANQSXMQDUR2LGW5N)
+[Stellar Laboratory - CAZY3EOFD4KS6FGSDOCVCZC44QQBVKADAU6OJFENJRFARMVIDWWEWVJI](https://lab.stellar.org/r/testnet/contract/CAZY3EOFD4KS6FGSDOCVCZC44QQBVKADAU6OJFENJRFARMVIDWWEWVJI)
 
 ## 🛠️ Features
 - **Stellar Wallet Authentication:** Native integration with **Freighter Wallet** for secure account access and transaction signing on the Stellar network.
@@ -164,10 +179,22 @@ Check the live contract on the Stellar Development Foundation Testnet Explorer:
 5. Access at `http://localhost:3000`
 
 ## 🧪 Running Tests
-To run the automated Rust smart contract testing suite:
+
+The test suites run automatically inside the GitHub Actions CI pipeline. You can also run them locally using the following commands:
+
+### Run all tests (Contracts + Frontend)
 ```bash
-cd rust-contracts/medichain
-cargo test
+npm run test
+```
+
+### Run only Frontend tests
+```bash
+npm run test:frontend
+```
+
+### Run only Smart Contract tests
+```bash
+npm run test:contract
 ```
 
 ## 🚀 Deployment
