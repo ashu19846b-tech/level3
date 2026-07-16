@@ -252,6 +252,19 @@ No page refresh needed - all updates are instant.
 - Touch-friendly buttons and navigation
 - Adaptive layouts for all screen sizes
 
+  ## 🚀 Project Highlights
+
+- ✅ Advanced Soroban Smart Contracts written in Rust
+- ✅ Inter-contract communication between MediChain and MediReward Token
+- ✅ Stellar Freighter Wallet authentication
+- ✅ IPFS (Pinata) decentralized file storage
+- ✅ Real-time contract event streaming
+- ✅ Mobile-first responsive UI
+- ✅ Automated CI/CD with GitHub Actions
+- ✅ Automated Rust smart contract testing
+- ✅ Production-ready Next.js architecture
+- ✅ Deployed on Stellar Testnet
+
 ## 🔗 Useful Resources
 - [Stellar Documentation](https://developers.stellar.org/)
 - [Soroban Smart Contracts](https://soroban.stellar.org/)
