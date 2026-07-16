@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useStellar } from "@/context/StellarContext";
 import { useRouter } from "next/navigation";
 import { useContractEvents, type ContractEvent, createRecordUploadedEvent, createRewardEarnedEvent } from "@/hooks/useContractEvents";
+import { prepareContractTransaction, submitTransaction } from "@/lib/soroban";
+import { Address, nativeToScVal } from "@stellar/stellar-sdk";
 
 // Types
 type Record = {
@@ -34,7 +36,7 @@ type LogEntry = {
 };
 
 export default function Dashboard() {
-  const { address, disconnect } = useStellar();
+  const { address, disconnect, signTx } = useStellar();
   const router = useRouter();
 
   // Redirect if not connected
@@ -128,10 +130,57 @@ export default function Dashboard() {
           console.error("Pinata error:", await res.text());
           recordHash = URL.createObjectURL(uploadForm.file); // Fallback
         }
-      } else {
+      } else if (uploadForm.file) {
+        // Fallback to local blob URL if no Pinata JWT is configured
         recordHash = URL.createObjectURL(uploadForm.file);
       }
       
+      // Submit transaction if wallet is connected
+      if (address) {
+        btn.textContent = "⚙️ Preparing transaction...";
+        try {
+          const txXdr = await prepareContractTransaction(address, "add_record", [
+            new Address(address).toScVal(),
+            nativeToScVal(recordHash, { type: 'string' }),
+            nativeToScVal(uploadForm.name, { type: 'string' })
+          ]);
+
+          btn.textContent = "✍️ Please sign in wallet...";
+          const signedXdr = await signTx(txXdr);
+
+          btn.textContent = "📡 Submitting to network...";
+          await submitTransaction(signedXdr);
+        } catch (simError: any) {
+          const errorMsg = simError.message || String(simError);
+          // If simulation fails because patient is not registered (trapped VM call), attempt to register them first
+          if (errorMsg.includes("Patient not registered") || errorMsg.includes("VM call trapped") || errorMsg.includes("InvalidAction")) {
+            btn.textContent = "🆕 Registering patient first...";
+            const regTxXdr = await prepareContractTransaction(address, "register_patient", [
+              new Address(address).toScVal(),
+              nativeToScVal(address.slice(0, 8), { type: "string" }), // Use short address prefix as initial name
+            ]);
+            btn.textContent = "✍️ Sign registration in wallet...";
+            const signedRegXdr = await signTx(regTxXdr);
+            btn.textContent = "📡 Registering on-chain...";
+            await submitTransaction(signedRegXdr);
+
+            // Retry adding the record
+            btn.textContent = "⚙️ Retrying record transaction...";
+            const txXdr = await prepareContractTransaction(address, "add_record", [
+              new Address(address).toScVal(),
+              nativeToScVal(recordHash, { type: 'string' }),
+              nativeToScVal(uploadForm.name, { type: 'string' })
+            ]);
+            btn.textContent = "✍️ Please sign in wallet...";
+            const signedXdr = await signTx(txXdr);
+            btn.textContent = "📡 Submitting to network...";
+            await submitTransaction(signedXdr);
+          } else {
+            throw simError;
+          }
+        }
+      }
+
       const newRecord: Record = {
         id: Date.now(),
         name: uploadForm.name,
@@ -163,30 +212,102 @@ export default function Dashboard() {
     }
   };
 
-  const handleGrant = (e: React.FormEvent) => {
+  const handleGrant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!grantForm.addr || !grantForm.name) return;
 
-    const newDoc: Doctor = {
-      id: Date.now(),
-      addr: grantForm.addr,
-      name: grantForm.name,
-      spec: grantForm.spec || "General Practice",
-      granted: new Date().toISOString()
-    };
+    try {
+      if (address) {
+        // Attempt to register the doctor on-chain first.
+        // Silently ignores "already registered" errors.
+        try {
+          const regTxXdr = await prepareContractTransaction(address, "register_doctor", [
+            new Address(grantForm.addr).toScVal(),
+            nativeToScVal(grantForm.name, { type: 'string' }),
+            nativeToScVal(grantForm.spec || "General Practice", { type: 'string' }),
+            nativeToScVal(BigInt(0), { type: 'i128' })
+          ]);
+          const regSignedXdr = await signTx(regTxXdr);
+          await submitTransaction(regSignedXdr);
+        } catch (regErr: unknown) {
+          const regMsg = regErr instanceof Error ? regErr.message : String(regErr);
+          if (!regMsg.includes("already registered") && !regMsg.includes("AlreadyRegistered")) {
+            console.warn("[MediChain] register_doctor (non-fatal):", regMsg);
+          }
+        }
 
-    setDoctors([...doctors, newDoc]);
-    setAccessLog([{ action: "GRANTED", doctorName: grantForm.name, doctorAddr: grantForm.addr, time: new Date().toISOString() }, ...accessLog]);
-    addActivity(`Access granted to <strong>${grantForm.name}</strong>`, "lime");
-    setGrantForm({ addr: "", name: "", spec: "" });
+        // Now grant access
+        try {
+          const txXdr = await prepareContractTransaction(address, "grant_access", [
+            new Address(address).toScVal(),
+            new Address(grantForm.addr).toScVal()
+          ]);
+          const signedXdr = await signTx(txXdr);
+          await submitTransaction(signedXdr);
+        } catch (simError: any) {
+          const errorMsg = simError.message || String(simError);
+          if (errorMsg.includes("Patient not registered") || errorMsg.includes("VM call trapped") || errorMsg.includes("InvalidAction")) {
+            // Register patient first
+            const regTxXdr = await prepareContractTransaction(address, "register_patient", [
+              new Address(address).toScVal(),
+              nativeToScVal(address.slice(0, 8), { type: "string" }),
+            ]);
+            const signedRegXdr = await signTx(regTxXdr);
+            await submitTransaction(signedRegXdr);
+
+            // Retry granting access
+            const txXdr = await prepareContractTransaction(address, "grant_access", [
+              new Address(address).toScVal(),
+              new Address(grantForm.addr).toScVal()
+            ]);
+            const signedXdr = await signTx(txXdr);
+            await submitTransaction(signedXdr);
+          } else {
+            throw simError;
+          }
+        }
+      }
+
+      const newDoc: Doctor = {
+        id: Date.now(),
+        addr: grantForm.addr,
+        name: grantForm.name,
+        spec: grantForm.spec || "General Practice",
+        granted: new Date().toISOString()
+      };
+
+      setDoctors([...doctors, newDoc]);
+      setAccessLog([{ action: "GRANTED", doctorName: grantForm.name, doctorAddr: grantForm.addr, time: new Date().toISOString() }, ...accessLog]);
+      addActivity(`Access granted to <strong>${grantForm.name}</strong>`, "lime");
+      setGrantForm({ addr: "", name: "", spec: "" });
+    } catch (error: any) {
+      console.error(error);
+      addActivity(`Failed to grant access: <strong>${error.message || error}</strong>`, "rust");
+    }
   };
 
-  const revokeAccess = (id: number) => {
+  const revokeAccess = async (id: number) => {
     const doc = doctors.find(d => d.id === id);
     if (!doc) return;
-    setDoctors(doctors.filter(d => d.id !== id));
-    setAccessLog([{ action: "REVOKED", doctorName: doc.name, doctorAddr: doc.addr, time: new Date().toISOString() }, ...accessLog]);
-    addActivity(`Access revoked from <strong>${doc.name}</strong>`, "rust");
+    
+    try {
+      if (address) {
+        const txXdr = await prepareContractTransaction(address, "revoke_access", [
+          new Address(address).toScVal(),
+          new Address(doc.addr).toScVal()
+        ]);
+        // signTx returns the signed XDR string directly
+        const signedXdr = await signTx(txXdr);
+        await submitTransaction(signedXdr);
+      }
+
+      setDoctors(doctors.filter(d => d.id !== id));
+      setAccessLog([{ action: "REVOKED", doctorName: doc.name, doctorAddr: doc.addr, time: new Date().toISOString() }, ...accessLog]);
+      addActivity(`Access revoked from <strong>${doc.name}</strong>`, "rust");
+    } catch (error: any) {
+      console.error(error);
+      addActivity(`Failed to revoke access: <strong>${error.message || error}</strong>`, "rust");
+    }
   };
 
   const deleteRecord = (id: number) => {
@@ -472,7 +593,7 @@ export default function Dashboard() {
               {['Imaging', 'Lab Report'].includes(selectedRecord.type) && (
                 <div className="mb-8 border-2 border-card-border p-2 bg-white">
                   <img
-                    src={selectedRecord.hash.startsWith('blob:') ? selectedRecord.hash : `https://ipfs.io/ipfs/${selectedRecord.hash}`}
+                    src={selectedRecord.hash.startsWith('blob:') ? selectedRecord.hash : `https://gateway.pinata.cloud/ipfs/${selectedRecord.hash}`}
                     alt="Record Detail"
                     className="w-full h-auto rounded-sm"
                     onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -490,7 +611,7 @@ export default function Dashboard() {
                 {selectedRecord.hash.startsWith('blob:') ? (
                   <span className="font-mono-plex text-[10px] tracking-[2px] uppercase text-lime">Dev Mode: Local Upload</span>
                 ) : (
-                  <a href={`https://ipfs.io/ipfs/${selectedRecord.hash}`} target="_blank" className="font-mono-plex text-[10px] tracking-[2px] uppercase text-burgundy border-b border-burgundy hover:text-ink hover:border-ink transition-all">View on IPFS ↗</a>
+                  <a href={`https://gateway.pinata.cloud/ipfs/${selectedRecord.hash}`} target="_blank" className="font-mono-plex text-[10px] tracking-[2px] uppercase text-burgundy border-b border-burgundy hover:text-ink hover:border-ink transition-all">View on IPFS ↗</a>
                 )}
               </div>
             </div>

@@ -10,13 +10,23 @@ export function useContractEvents(callback: (event: ContractEvent) => void) {
   const listenerRef = useRef<((e: StorageEvent) => void) | null>(null);
 
   useEffect(() => {
-    // Listen for contract events from localStorage (mock implementation for dev)
+    // Cross-tab real-time event bridge using the localStorage Storage API.
+    // When a contract action succeeds (add_record, grant_access, etc.) the
+    // corresponding helper (createRecordUploadedEvent, etc.) writes a structured
+    // event to localStorage keyed as 'medichain_event'.  The browser fires the
+    // 'storage' DOM event in all *other* open tabs of the same origin, enabling
+    // a live activity-feed without polling the blockchain on every render.
+    //
+    // Production upgrade path: replace this listener with a Soroban RPC
+    // event subscription — `server.getEvents({ filters: [{ contractIds: [CONTRACT_ID] }] })`
+    // — to receive on-chain contract events emitted by the Soroban runtime in
+    // real time rather than relying on localStorage notifications.
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'medichain_event' && e.newValue) {
         try {
           const event = JSON.parse(e.newValue);
           callback(event);
-          // Clean up after processing
+          // Clean up after processing so the same event isn't replayed
           localStorage.removeItem('medichain_event');
         } catch (err) {
           console.error('Error parsing contract event:', err);
