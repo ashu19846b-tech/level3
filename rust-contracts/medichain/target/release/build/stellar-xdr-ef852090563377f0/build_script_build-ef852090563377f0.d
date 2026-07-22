@@ -1,5 +1,0 @@
-C:\Users\Paras\Desktop\stellar-4task\Green_Belt\rust-contracts\medichain\target\release\build\stellar-xdr-ef852090563377f0\build_script_build-ef852090563377f0.d: C:\Users\Paras\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\stellar-xdr-25.0.0\build.rs
-
-C:\Users\Paras\Desktop\stellar-4task\Green_Belt\rust-contracts\medichain\target\release\build\stellar-xdr-ef852090563377f0\build_script_build-ef852090563377f0.exe: C:\Users\Paras\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\stellar-xdr-25.0.0\build.rs
-
-C:\Users\Paras\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\stellar-xdr-25.0.0\build.rs:

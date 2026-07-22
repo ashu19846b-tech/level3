@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "npm run test:frontend && npm run test:contract",
+    "test:frontend": "node --test",
+    "test:contract": "cd rust-contracts/medichain && cargo test"
   },
   "dependencies": {
     "@stellar/freighter-api": "^6.0.1",

@@ -1,1 +1,0 @@
-C:\Users\Paras\Desktop\stellar-4task\Green_Belt\rust-contracts\medichain\target\wasm32v1-none\release\medichain.wasm: C:\Users\Paras\Desktop\stellar-4task\Green_Belt\rust-contracts\medichain\src\lib.rs
