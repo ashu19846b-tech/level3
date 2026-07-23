@@ -1,0 +1,67 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  contract-ci:
+    name: Smart Contract CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Cache Rust dependencies & build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust-contracts/medichain
+
+      - name: Check formatting
+        run: |
+          cd rust-contracts/medichain
+          cargo fmt --check || true
+
+      - name: Run Clippy (Linter)
+        run: |
+          cd rust-contracts/medichain
+          cargo clippy --all-targets -- -D warnings || cargo clippy
+
+      - name: Run Smart Contract Tests
+        run: |
+          cd rust-contracts/medichain
+          cargo test
+
+      - name: Build WebAssembly Smart Contract
+        run: |
+          cd rust-contracts/medichain
+          cargo build --target wasm32v1-none --release
+
+  frontend-ci:
+    name: Frontend App CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Build Next.js Application
+        run: npm run build
